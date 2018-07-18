@@ -1,0 +1,27 @@
+version: "2"
+services:
+    node:
+        extends: 
+            file: docker-compose.base.yml
+            service: node
+    nginx:
+        extends: 
+            file: docker-compose.base.yml
+            service: nginx
+    phpfpm:
+        extends: 
+            file: docker-compose.base.yml
+            service: phpfpm
+    redis:
+        extends: 
+            file: docker-compose.base.yml
+            service: redis
+networks:
+    network:
+        driver: "bridge"
+volumes:
+    mysql:
+        driver: "local"
+    redis:
+        driver: "local"
+        

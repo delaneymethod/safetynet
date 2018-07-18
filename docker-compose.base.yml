@@ -1,0 +1,44 @@
+version: "2"
+services:
+    node:
+        image: ${DOCKER_USER}/${DOCKER_IMAGE_NODE}:latest
+        volumes:
+            - ./:${APP_PATH}
+        networks:
+            - network
+    nginx:
+        image: ${DOCKER_USER}/${DOCKER_IMAGE_NGINX}:laravel
+        volumes:
+            - ./:${APP_PATH}
+        networks:
+            - network
+        restart: always
+    phpfpm:
+        image: ${DOCKER_USER}/${DOCKER_IMAGE_PHPFPM}:latest
+        volumes:
+            - ./:${APP_PATH}
+        networks:
+            - network
+        restart: always
+    redis:
+        image: ${DOCKER_USER}/${DOCKER_IMAGE_REDIS}:latest
+        volumes:
+            - redis:/data
+        networks:
+            - network
+        restart: always
+    mariadb:
+        image: ${DOCKER_USER}/${DOCKER_IMAGE_MARIADB}:latest
+        volumes:
+            - mysql:/var/lib/mysql
+        networks:
+            - network
+        restart: always
+    nginx_phpfpm:
+        image: ${DOCKER_USER}/${DOCKER_IMAGE_NGINX_PHPFPM}:laravel
+        volumes:
+            - ./:${APP_PATH}
+        networks:
+            - network
+        restart: always
+        

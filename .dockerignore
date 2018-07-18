@@ -1,0 +1,9 @@
+.git
+*.md
+/node_modules
+/vendor
+npm-debug.log
+todo.txt
+.env
+.env.php
+.env.backup

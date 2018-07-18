@@ -1,0 +1,204 @@
+#!/usr/bin/env bash
+
+# Decide which docker-compose file to use
+COMPOSE_FILE="development"
+
+# Disable pseudo-TTY allocation for CI/CD (Jenkins)
+TTY=""
+
+# Set Docker environment variables
+export DOCKER_USER=delaneymethod
+export DOCKER_IMAGE_NODE=node
+export DOCKER_IMAGE_NGINX=nginx
+export DOCKER_IMAGE_REDIS=redis
+export DOCKER_IMAGE_PHPFPM=phpfpm
+export DOCKER_IMAGE_MARIADB=mariadb
+export DOCKER_IMAGE_NGINX_PHPFPM=nginx-phpfpm
+
+# Change settings for CI/CD
+if [ ! -z "$BUILD_NUMBER" ]; then
+	
+	# Set App environment variables
+	export APP_URL=${APP_URL:-http://localhost}
+	export APP_ENV=${APP_ENV:-local}
+	export APP_PORT=${APP_PORT:-80}
+	export APP_PATH=${APP_PATH:-/var/www/html}
+	export APP_PATH_PUBLIC=${APP_PATH_PUBLIC:-public}
+	
+	# We need the full path here because /sbin is not in user Jenkins $PATH
+	export XDEBUG_HOST=$(/sbin/ifconfig docker0 | grep "inet addr" | cut -d ':' -f 2 | cut -d ' ' -f 1)
+	
+	COMPOSE_FILE="ci"
+	
+	TTY="-T"
+else
+	# Read App environment variables for development
+	source ./.env
+	
+	export XDEBUG_HOST=$(ipconfig getifaddr en1)
+fi
+
+# Create docker-compose command to run
+COMPOSE="docker-compose -f docker-compose.${COMPOSE_FILE}.yml"
+
+# If we pass any arguments...
+if [ $# -gt 0 ]; then
+	
+	# If "logs" is used
+	if [ "$1" == "logs" ]; then
+		shift 1
+		echo "" > ./storage/logs/laravel.log
+	
+	# If "artisan" is used, pass-thru to "artisan" inside our phpfpm container
+	elif [ "$1" == "artisan" ]; then
+		shift 1
+		$COMPOSE run \
+			--rm \
+			$TTY \
+			-w ${APP_PATH} \
+			phpfpm \
+			php artisan "$@"
+	
+	# If "composer" is used, pass-thru to "composer" inside our phpfpm container
+	elif [ "$1" == "composer" ]; then
+		shift 1
+		$COMPOSE run \
+			--rm \
+			$TTY \
+			-w ${APP_PATH} \
+			phpfpm \
+			composer "$@"
+	
+	# If "test" is used, run unit tests, pass-thru any extra arguments to php-unit inside our phpfpm container
+	elif [ "$1" == "test" ]; then
+		shift 1
+		$COMPOSE run \
+			--rm \
+			$TTY \
+			-w ${APP_PATH} \
+			phpfpm \
+			./vendor/bin/phpunit "$@"
+	
+	elif [ "$1" == "t" ]; then
+		shift 1
+		$COMPOSE exec \
+			phpfpm \
+			sh -c "cd ${APP_PATH} && ./vendor/bin/phpunit $@"
+			
+	# If "node" is used, run node from inside our node container
+	elif [ "$1" == "node" ]; then
+		shift 1
+		$COMPOSE run \
+			--rm \
+			$TTY \
+			-w ${APP_PATH} \
+			node \
+			node "$@"
+	
+	# If "npm" is used, run npm from inside our node container
+	elif [ "$1" == "npm" ]; then
+		shift 1
+		$COMPOSE run \
+			--rm \
+			$TTY \
+			-w ${APP_PATH} \
+			node \
+			npm "$@"
+	
+	# If "watch" is used, run npm from inside our node container, passing in the watch parameter
+	elif [ "$1" == "watch" ]; then
+		shift 1
+		$COMPOSE run \
+			--rm \
+			$TTY \
+			-w ${APP_PATH} \
+			node \
+			npm run watch
+	
+	# If "dev" is used, run npm from inside our node container, passing in the dev parameter
+	elif [ "$1" == "dev" ]; then
+		shift 1
+		$COMPOSE run \
+			--rm \
+			$TTY \
+			-w ${APP_PATH} \
+			node \
+			npm run dev
+	
+	# If "production" is used, run npm from inside our node container, passing in the production parameter
+	elif [ "$1" == "production" ]; then
+		shift 1
+		$COMPOSE run \
+			--rm \
+			$TTY \
+			-w ${APP_PATH} \
+			node \
+			npm run production		
+	
+	# If "yarn" is used, run yarn from inside our node container
+	elif [ "$1" == "yarn" ]; then
+		shift 1
+		$COMPOSE run \
+			--rm \
+			$TTY \
+			-w ${APP_PATH} \
+			node \
+			yarn "$@"
+	
+	# If "git" is used, run git from our inside our node container
+	elif [ "$1" == "git" ]; then
+		shift 1
+		$COMPOSE run \
+			--rm \
+			$TTY \
+			-w ${APP_PATH} \
+			node \
+			git "$@"
+	
+	# If "gulp" is used, run gulp from inside our node container
+	elif [ "$1" == "gulp" ]; then
+		shift 1
+		$COMPOSE run \
+			--rm \
+			$TTY \
+			-w ${APP_PATH} \
+			node \
+			./node_modules/.bin/gulp "$@"
+			
+	# If "volumes" is used
+	elif [ "$1" == "volumes" ]; then
+		shift 1
+		docker volume ls
+	
+	# If "networks" is used
+	elif [ "$1" == "networks" ]; then
+		shift 1
+		docker network ls
+		
+	# If "horizon" is used
+	elif [ "$1" == "horizon" ]; then
+		shift 1
+		$COMPOSE run \
+		--rm \
+		$TTY \
+		-w ${APP_PATH} \
+		phpfpm \
+		php artisan horizon "$@"
+	
+	elif [ "$1" == "pull" ]; then
+		shift 1
+	
+		$COMPOSE pull
+	
+	elif [ "$1" == "up" ]; then
+		shift 1
+	
+		$COMPOSE up -d
+	
+	# Else, pass-thru args to docker-compose
+	else
+		$COMPOSE "$@"
+	fi
+else
+	$COMPOSE ps
+fi

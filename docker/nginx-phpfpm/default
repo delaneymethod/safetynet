@@ -1,0 +1,115 @@
+server {
+	client_max_body_size 600m;
+	client_body_buffer_size 128k;
+	
+	listen 80 default_server;
+	listen [::]:80 default_server ipv6only=on;
+
+	root /var/www/html/public;
+	
+	index index.php index.html index.htm;
+	
+	server_name _;
+	
+	charset utf-8;
+	
+	location / {
+		# First attempt to serve request as file, then
+		# as directory, then fall back to displaying a 404.
+		try_files $uri $uri/ /index.php?$query_string;
+		
+		# Remove index.php
+		rewrite ^/index\.php(.*) $1 permanent;
+	
+		# Uncomment to enable naxsi on this location
+		# include /etc/nginx/naxsi.rules
+	}
+	
+	location ^~ /.well-known/acme-challenge/ {
+		allow all;
+		default_type "text/plain";
+		root /var/www/html/public;
+	}
+	
+	location ~ \.php$ {
+		include snippets/fastcgi-php.conf;
+	
+		fastcgi_buffer_size 128k;
+		fastcgi_buffers 256 16k;
+		fastcgi_busy_buffers_size 256k;
+		fastcgi_temp_file_write_size 256k;
+		
+		fastcgi_pass unix:/run/php/php7.1-fpm.sock;
+		
+		# Point to our PHP FPM docker container.
+		#fastcgi_pass phpfpm:9000;
+	}
+	
+	location ~* (?:^|/)\. {
+		access_log off;
+		log_not_found off;
+		deny all;
+	}
+	
+	location = /favicon.ico {
+		access_log off;
+		log_not_found off;
+	}
+	
+	location = /robots.txt {
+		access_log off;
+		log_not_found off;
+	}
+	
+	location ~* (?:\.(?:bak|config|sql|fla|psd|ini|log|sh|inc|swp|dist)|~)$ {
+		access_log off;
+		log_not_found off;
+		deny all;
+	}
+	
+	location ~* \.(?:manifest|appcache|html?|xml|json)$ {
+		access_log off;
+		log_not_found off;
+		try_files $uri /index.php?$query_string;
+		expires -1;
+	}
+	
+	location ~* \.(?:rss|atom)$ {
+		access_log off;
+		log_not_found off;
+		try_files $uri /index.php?$query_string;
+		expires 1h;
+		add_header Cache-Control "public";
+	}
+	
+	location ~* \.(?:jpg|jpeg|gif|png|ico|cur|gz|svg|svgz|mp4|ogg|ogv|webm|htc)$ {
+		access_log off;
+		log_not_found off;
+		try_files $uri /index.php?$query_string;
+		expires 360d;
+		add_header Cache-Control "public";
+	}
+	
+	location ~* \.(?:css|js)$ {
+		access_log off;
+		log_not_found off;
+		try_files $uri /index.php?$query_string;
+		expires 1y;
+		add_header Cache-Control "public";
+	}
+	
+	location ~* \.(?:ttf|ttc|otf|eot|woff)$ {
+		access_log off;
+		log_not_found off;
+		try_files $uri /index.php?$query_string;
+		expires 1M;
+		add_header Cache-Control "public";
+	}
+	
+	# deny access to .htaccess files, if Apache's document root concurs with nginx's one
+	location ~ /\.ht {
+		access_log off;
+		log_not_found off;
+		deny all;
+	}
+}

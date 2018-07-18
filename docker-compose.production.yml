@@ -1,0 +1,43 @@
+version: "2"
+services:
+    node:
+        image: ${DOCKER_USER}/${DOCKER_IMAGE_NODE}:latest
+        networks:
+            - network
+    nginx_phpfpm:
+        image: survitecgroup/safetynet:latest
+        ports:
+            - "${APP_PORT}:${APP_PORT}"
+        networks:
+            - network
+        restart: unless-stopped
+    redis:
+        image: ${DOCKER_USER}/${DOCKER_IMAGE_REDIS}:latest
+        volumes:
+            - redis:/data
+        networks:
+            - network
+        restart: unless-stopped
+    mariadb:
+        image: ${DOCKER_USER}/${DOCKER_IMAGE_MARIADB}:latest
+        ports:
+            - "${DB_PORT}:${DB_PORT}"
+        environment:
+            MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+            MYSQL_DATABASE: ${DB_DATABASE}
+            MYSQL_USER: ${DB_USERNAME}
+            MYSQL_PASSWORD: ${DB_PASSWORD}
+        volumes:
+            - mysql:/var/lib/mysql
+        networks:
+            - network
+        restart: unless-stopped
+networks:
+    network:
+        driver: "bridge"
+volumes:
+    mysql:
+        driver: "local"
+    redis:
+        driver: "local"
+        

@@ -1,0 +1,370 @@
+// use GuzzleHttp\Psr7;
+// use GuzzleHttp\Client;
+
+
+//use JakubKlapka\LaravelSharepointUploadClient\Factories\ClientFactory as Sharepoint;
+use GuzzleHttp\Exception\{ClientException, RequestException};
+
+
+/**
+	 * Connect to Sharepoint
+	 *
+	 * @params	Request 	$request
+	 * @return 	Response
+	 */
+	public function sharepoint(Request $request)
+	{
+		$sharepointUrl = 'https://survitecgroup.sharepoint.com';
+		
+		$sitesUri = 'sites';
+		
+		$siteName = 'SafetyNet';
+		
+		$documentsUri = 'Shared%20Documents';
+		
+		$folderPath = DIRECTORY_SEPARATOR.$sitesUri.DIRECTORY_SEPARATOR.$siteName.DIRECTORY_SEPARATOR.$documentsUri;
+		
+		$appId = '02fee362-0fca-4540-abe0-f75b0da1ea29'; // Test - Localhost
+		
+		$appSecret = 'kVkMwWlyQ4cn50tODHCBfVoPYb5WXd7a6b7OyU7nMaY='; // Test - Localhost
+		
+		$redirectUri = 'https://localhost/cp/assets/sharepoint'; // Test - Localhost
+		
+		
+		
+		
+		
+		$sharepoint = new Sharepoint();
+		
+		$sharepointClient = $sharepoint->makeClient($sharepointUrl.DIRECTORY_SEPARATOR.$sitesUri.DIRECTORY_SEPARATOR.$siteName, $appId, $appSecret, $redirectUri);
+		
+		
+		
+		$authCode = $request->get('code') ?? 'IAAAAMohUzcH7x23218pQ4ItabjEDZH0U-DCX70vwKRw6hnXWFCe0DKaaS1p_yksao56fo4ts8Uv8L1N37oqZ4N-9c1KC-w_Vd9E7NHjl0PTwGS7p0SXbnvf1COFQ8OyVkThBGbcpWBmYEIOghj5nzgM8OP2ZhJGXvdBLpuQAHLkVsTuM-V-h7mZL4tA1scS-vQkNVPKfqvy0j86_lWoPnj3L1ug3X_wWbQNhF6c5KrhfO4oIKOiBwQplhyTa21DxXvT64qX6R_V90i8hmf3KECSeV_fkeNB1aPu1GAYUIQc3lxW7xB5ybS0_BXjz4UP65-YuA-DOG4rL_XZ2bMd8xqmKsPbaVPTpKrylYEJ_Mr-KpJZh_FD4w2pGNz2sjdm0o4Gog';
+		
+		if (empty($authCode)) {
+			$redirectUrl = $sharepointClient->getUserConsentUri();
+		
+			return redirect($redirectUrl);
+		}
+		
+		$refreshToken = 'IAAAACs4CvL72DALC0FonR33d5IfAGBu6sSDmp5xDoeeTJJE4s97RJrD9J_h9PbkGoHCcTk2pJXI54w_5kUoALyAmtB4mmSkPMy7elIbTNxtA-UBcGZYWQUWQ9KCon4X-9OHX5jrtUQhN2YuSJGX8FgtIk7KB23YM5OM4GjCYljUSPVGKhpPR12KHte-0fqtfnCkuts7phnNGhbK46n8HTRKRQC0_HBhN4GP3snQ1GGb4lkDTzBuHU81SEi91B3ChBzFcw5lCwwyeAjEm3RAIbr2oAwwHSYHdY_NcyhdQ7KIPD8zaqZnSlXGlGPz2HjlLjZLpsGvgFTW0y4r6M1IPXhkbdA';
+		
+		if (empty($refreshToken)) {
+			$refreshToken = $sharepointClient->getRefreshTokenFromAuthCode($authCode);
+		}
+		
+		
+		
+		
+		
+		$diskPath = StorageHelper::getDiskRootPath();
+		
+		$inDevelopmentMode = config('app.debug');
+		
+		$verify = ($inDevelopmentMode) ? false : true;
+		
+		
+		
+		
+		
+		try {
+			$guzzleClient = new Client([
+				'verify' => $verify,
+			]);
+			
+			$requestHeaders = [
+				'Authorization' => 'Bearer '.$sharepointClient->getAccessToken($refreshToken),
+				'Accept' => 'application/json;odata=verbose',
+			];
+			
+			
+			
+			
+			
+			
+			
+			
+			// Get a File
+			/*
+			$fileName = 'source-logo.png';	
+			
+			// To get specific file data pass in the value you want e.g. /Name 
+			$requestUrl = $sharepointUrl.DIRECTORY_SEPARATOR.$sitesUri.DIRECTORY_SEPARATOR.$siteName.DIRECTORY_SEPARATOR.'_api/Web/GetFolderByServerRelativeUrl(\''.$folderPath.'\')/Files(\''.$fileName.'\')'; 
+			
+			$requestMethod = 'GET';
+			
+			$response = $guzzleClient->request($requestMethod, $requestUrl, [
+				'headers' => $requestHeaders,
+			]);
+			
+			$file = json_decode($response->getBody())->d;
+			
+			dump($file);
+			*/
+			
+			// Get all Files
+			/*
+			// To get specific file data pass in the value you want e.g. /Name 
+			$requestUrl = $sharepointUrl.DIRECTORY_SEPARATOR.$sitesUri.DIRECTORY_SEPARATOR.$siteName.DIRECTORY_SEPARATOR.'_api/Web/GetFolderByServerRelativeUrl(\''.$folderPath.'\')/Files'; 
+			
+			$requestMethod = 'GET';
+			
+			$response = $guzzleClient->request($requestMethod, $requestUrl, [
+				'headers' => $requestHeaders,
+			]);
+			
+			$files = json_decode($response->getBody())->d->results;
+			
+			foreach ($files as $file) {
+				dump($file);
+			}
+			*/
+			
+			// Add file
+			/*
+			$fileName = 'nexo-logo.png';
+			
+			$requestUrl = $sharepointUrl.DIRECTORY_SEPARATOR.$sitesUri.DIRECTORY_SEPARATOR.$siteName.DIRECTORY_SEPARATOR.'_api/Web/GetFolderByServerRelativeUrl(\''.$folderPath.'\')/Files/add(url=\''.$fileName.'\',overwrite=true)';
+			
+			$stream = fopen($diskPath.DIRECTORY_SEPARATOR.$fileName, 'r');
+			
+			$requestMethod = 'POST';
+			
+			$response = $guzzleClient->request($requestMethod, $requestUrl, [
+				'headers' => $requestHeaders,
+				'body' => stream,
+			]);
+			
+			$statusCode = $response->getStatusCode();
+			
+			$reasonPhrase = $response->getReasonPhrase();
+			
+			dump($statusCode, $reasonPhrase);
+			
+			fclose($stream);
+			*/
+			
+			
+			// Move file
+			/*
+			$fileName = 'source-logo.png';
+			
+			$folderName = 'supporting-files';
+			
+			// Check if folder exists first
+			$requestUrl = $sharepointUrl.DIRECTORY_SEPARATOR.$sitesUri.DIRECTORY_SEPARATOR.$siteName.DIRECTORY_SEPARATOR.'_api/Web/GetFolderByServerRelativeUrl(\''.$folderPath.'\')/Folders';
+			
+			$requestMethod = 'GET';
+			
+			$response = $guzzleClient->request($requestMethod, $requestUrl, [
+				'headers' => $requestHeaders,
+			]);
+			
+			$folders = json_decode($response->getBody())->d->results;
+			
+			$folderExists = false;
+			
+			foreach ($folders as $folder) {
+				if ($folder->Name === $folderName) {
+					$folderExists = true;
+				}
+			}
+			
+			if (!$folderExists) {
+				// Create the folder
+				$requestUrl = $sharepointUrl.DIRECTORY_SEPARATOR.$sitesUri.DIRECTORY_SEPARATOR.$siteName.DIRECTORY_SEPARATOR.'_api/Web/folders';
+			
+				$requestMethod = 'POST';
+			
+				$requestHeaders['Content-Type'] = 'application/json;odata=verbose';
+			
+				$folderAttributes = [
+					'__metadata' => [
+						'type' => 'SP.Folder',
+					],
+					'ServerRelativeUrl' => $folderPath.DIRECTORY_SEPARATOR.$folderName,
+				];
+			
+				$response = $guzzleClient->request($requestMethod, $requestUrl, [
+					'headers' => $requestHeaders,
+					'body' => json_encode($folderAttributes)
+				]);
+			
+				$statusCode = $response->getStatusCode();
+			
+				$reasonPhrase = $response->getReasonPhrase();
+				
+				// now call function to update the file
+			}
+			
+			// else call function to update the file
+			
+			$newFolderPath = $folderPath.DIRECTORY_SEPARATOR.$folderName;
+			
+			$requestUrl = $sharepointUrl.DIRECTORY_SEPARATOR.$sitesUri.DIRECTORY_SEPARATOR.$siteName.DIRECTORY_SEPARATOR.'_api/Web/GetFileByServerRelativeUrl(\''.$folderPath.DIRECTORY_SEPARATOR.$fileName.'\')/moveto(newurl=\''.$newFolderPath.DIRECTORY_SEPARATOR.$fileName.'\',flags=1)';
+			
+			$requestMethod = 'POST';
+			
+			$response = $guzzleClient->request($requestMethod, $requestUrl, [
+				'headers' => $requestHeaders,
+			]);
+			
+			$statusCode = $response->getStatusCode();
+			
+			$reasonPhrase = $response->getReasonPhrase();
+			
+			dump($statusCode, $reasonPhrase);
+			*/
+			
+			// Delete file
+			/*
+			$fileName = 'nexo-logo.png';
+			
+			$requestUrl = $sharepointUrl.DIRECTORY_SEPARATOR.$sitesUri.DIRECTORY_SEPARATOR.$siteName.DIRECTORY_SEPARATOR.'_api/Web/GetFileByServerRelativeUrl(\''.$folderPath.DIRECTORY_SEPARATOR.$fileName.'\')';
+			
+			$requestMethod = 'POST';
+			
+			$requestHeaders['IF-MATCH'] = 'etag';
+			
+			$requestHeaders['X-HTTP-Method'] = 'DELETE';
+			
+			$response = $guzzleClient->request($requestMethod, $requestUrl, [
+				'headers' => $requestHeaders,
+			]);
+			
+			$statusCode = $response->getStatusCode();
+			
+			$reasonPhrase = $response->getReasonPhrase();
+			
+			dump($statusCode, $reasonPhrase);
+			*/
+			
+			// Get all Folders
+			/*
+			$requestUrl = $sharepointUrl.DIRECTORY_SEPARATOR.$sitesUri.DIRECTORY_SEPARATOR.$siteName.DIRECTORY_SEPARATOR.'_api/Web/GetFolderByServerRelativeUrl(\''.$folderPath.'\')/Folders';
+			
+			$requestMethod = 'GET';
+			
+			$response = $guzzleClient->request($requestMethod, $requestUrl, [
+				'headers' => $requestHeaders,
+			]);
+			
+			$folders = json_decode($response->getBody())->d;
+			
+			foreach ($folders as $folder) {
+				dump($folder);
+			}
+			*/
+			
+			/*
+			// List Folder
+			$folderPath = DIRECTORY_SEPARATOR.$sitesUri.DIRECTORY_SEPARATOR.$siteName.DIRECTORY_SEPARATOR.$documentsUri.DIRECTORY_SEPARATOR.'supporting-files';
+			
+			$requestUrl = $sharepointUrl.DIRECTORY_SEPARATOR.$sitesUri.DIRECTORY_SEPARATOR.$siteName.DIRECTORY_SEPARATOR.'_api/Web/GetFolderByServerRelativeUrl(\''.$folderPath.'\')';
+			
+			$requestMethod = 'GET';
+			
+			$response = $guzzleClient->request($requestMethod, $requestUrl, [
+				'headers' => $requestHeaders,
+			]);
+			
+			$folder = json_decode($response->getBody())->d;
+			
+			dump($folder);
+			*/
+			
+			// Create Folder
+			/*
+			$folderName = 'supporting-files';
+			
+			$requestUrl = $sharepointUrl.DIRECTORY_SEPARATOR.$sitesUri.DIRECTORY_SEPARATOR.$siteName.DIRECTORY_SEPARATOR.'_api/Web/folders';
+			
+			$requestMethod = 'POST';
+			
+			$requestHeaders['Content-Type'] = 'application/json;odata=verbose';
+			
+			$folderAttributes = [
+				'__metadata' => [
+					'type' => 'SP.Folder',
+				],
+				'ServerRelativeUrl' => $folderPath.DIRECTORY_SEPARATOR.$folderName,
+			];
+			
+			$response = $guzzleClient->request($requestMethod, $requestUrl, [
+				'headers' => $requestHeaders,
+				'body' => json_encode($folderAttributes)
+			]);
+			
+			$statusCode = $response->getStatusCode();
+			
+			$reasonPhrase = $response->getReasonPhrase();
+			
+			dump($statusCode, $reasonPhrase);
+			*/
+			
+			// Delete Folder
+			/*
+			$folderName = 'supporting-files';
+			
+			$requestUrl = $sharepointUrl.DIRECTORY_SEPARATOR.$sitesUri.DIRECTORY_SEPARATOR.$siteName.DIRECTORY_SEPARATOR.'_api/Web/GetFolderByServerRelativeUrl(\''.$folderPath.DIRECTORY_SEPARATOR.$folderName.'\')';
+			
+			$requestMethod = 'POST';
+			
+			$requestHeaders['IF-MATCH'] = 'etag';
+			
+			$requestHeaders['X-HTTP-Method'] = 'DELETE';
+			
+			$response = $guzzleClient->request($requestMethod, $requestUrl, [
+				'headers' => $requestHeaders,
+			]);
+			
+			$statusCode = $response->getStatusCode();
+			
+			$reasonPhrase = $response->getReasonPhrase();
+			
+			dump($statusCode, $reasonPhrase);
+			*/
+			
+			
+			
+			
+			
+			
+				
+				//dd(Storage::disk('uploads')->directories('/'), Storage::disk('sharepoint')->directories('/'));
+				
+				
+				
+				
+			
+			
+			
+		} catch (RequestException $requestException) {
+			$exceptionRequest = Psr7\str($requestException->getRequest());
+			
+			$exceptionMessages = [];
+			
+			array_push($exceptionMessages, 'Request Exception');
+			
+			array_push($exceptionMessages, [
+				'exception' => $requestException
+			]);
+			
+			dd($exceptionMessages);
+		} catch (ClientException $clientException) {
+			$exceptionRequest = Psr7\str($clientException->getRequest());
+			
+			$exceptionMessages = [];
+			
+			array_push($exceptionMessages, 'Client Exception');
+			
+			array_push($exceptionMessages, [
+				'exception' => $clientException
+			]);
+			
+			dd($exceptionMessages);
+		}
+		
+		dd('Done');
+	}

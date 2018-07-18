@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+
+# Decide which docker-compose file to use
+COMPOSE_FILE="production"
+
+# Set environment variables
+export DIGITIAL_OCEAN_API_KEY=${DIGITIAL_OCEAN_API_KEY:-}
+
+export DOCKER_USER=delaneymethod
+export DOCKER_IMAGE_NODE=node
+export DOCKER_IMAGE_NGINX=nginx
+export DOCKER_IMAGE_REDIS=redis
+export DOCKER_IMAGE_PHPFPM=phpfpm
+export DOCKER_IMAGE_MARIADB=mariadb
+export DOCKER_IMAGE_NGINX_PHPFPM=nginx-phpfpm
+
+export DB_PORT=${DB_PORT:-3306}
+export DB_DATABASE=${DB_DATABASE:-safetynet}
+export DB_USERNAME=${DB_USERNAME:-safetynet}
+export DB_PASSWORD=${DB_PASSWORD:-safetynet}
+
+export APP_PATH=${APP_PATH:-/var/www/html}
+export APP_PORT=${APP_PORT:-80}
+	     
+export XDEBUG_HOST=$(ipconfig getifaddr en1)
+
+# Create docker-compose command to run
+COMPOSE="docker-compose -f docker-compose.${COMPOSE_FILE}.yml"
+
+if [ $# -gt 0 ]; then
+	if [ "$1" == "ls" ]; then
+		shift 1
+
+		docker-machine ls
+	elif [ "$1" == "ps" ]; then
+		shift 1
+
+		docker ps -a
+	elif [ "$1" == "env" ]; then
+		shift 1
+	
+		docker-machine env "$1"
+	elif [ "$1" == "ip" ]; then
+		shift 1
+	
+		docker-machine ip "$1"
+	elif [ "$1" == "start" ]; then
+		shift 1
+	
+		docker-machine start "$1"
+	elif [ "$1" == "restart" ]; then
+		shift 1
+	
+		docker-machine restart "$1"
+	elif [ "$1" == "ssl" ]; then
+		shift 1
+	
+		docker-machine regenerate-certs "$1"
+	elif [ "$1" == "stop" ]; then
+		shift 1
+	
+		docker-machine stop "$1"
+	elif [ "$1" == "ssh" ]; then
+		shift 1
+	
+		docker-machine ssh "$1"
+	elif [ "$1" == "rm" ]; then
+		shift 1
+	
+		docker-machine rm -f "$1"
+	elif [ "$1" == "create" ]; then
+		shift 1
+		
+		# This can easily be AWS or Azure or any other driver - See https://docs.docker.com/machine/drivers/ but note our READMEs target Digital Ocean
+		docker-machine create --driver=digitalocean --digitalocean-access-token=${DIGITIAL_OCEAN_API_KEY} --digitalocean-size="$1" --digitalocean-region="$2" "$3"
+	elif [ "$1" == "pull" ]; then
+		shift 1
+	
+		$COMPOSE pull
+	elif [ "$1" == "up" ]; then
+		shift 1
+	
+		$COMPOSE up -d
+	elif [ "$1" == "down" ]; then
+		shift 1
+	
+		$COMPOSE down
+	elif [ "$1" == "compose" ]; then
+		shift 1
+	
+		$COMPOSE "${@}"
+	else
+		docker "${@}"
+	fi	
+else
+	docker "${@}"
+fi

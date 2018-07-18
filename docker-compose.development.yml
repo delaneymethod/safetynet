@@ -1,0 +1,40 @@
+version: "2"
+services:
+    node:
+        extends: 
+            file: docker-compose.base.yml
+            service: node
+    nginx:
+        extends: 
+            file: docker-compose.base.yml
+            service: nginx
+        ports:
+            - "${APP_PORT}:${APP_PORT}"
+    phpfpm:
+        extends: 
+            file: docker-compose.base.yml
+            service: phpfpm
+    redis:
+        extends: 
+            file: docker-compose.base.yml
+            service: redis
+    mariadb:
+        extends: 
+            file: docker-compose.base.yml
+            service: mariadb
+        ports:
+            - "${DB_PORT}:${DB_PORT}"
+        environment:
+            MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+            MYSQL_DATABASE: ${DB_DATABASE}
+            MYSQL_USER: ${DB_USERNAME}
+            MYSQL_PASSWORD: ${DB_PASSWORD}
+networks:
+    network:
+        driver: "bridge"
+volumes:
+    mysql:
+        driver: "local"
+    redis:
+        driver: "local"
+        

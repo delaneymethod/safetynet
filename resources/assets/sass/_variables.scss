@@ -1,0 +1,71 @@
+/**
+ * @link      https://www.delaneymethod.com/cms
+ * @copyright Copyright (c) DelaneyMethod
+ * @license   https://www.delaneymethod.com/cms/license
+ */
+ 
+$enable-hover-media-query: true;
+
+$font-size-base: calculateRem(14px);
+
+$modal-xl: calculateRem(1200px) !default;
+
+$fa-font-path: '/assets/fonts';
+
+$flagsImagePath: '/assets/img/';
+
+$input-border-focus: rgba(0, 0, 0, 0.075);
+
+$sidebar-bg-color: #222D32;
+
+$sidebar-submenu-bg-color: #2C3B41;
+
+$sidebar-h4-bg-color: #1A2226;
+
+$sidebar-a-hover-bg-color: #1E282C;
+
+$main-bg-color: #F1F3F6;
+
+$main-message-bg-color: theme-color('danger');
+
+$safetynet-orange: rgb(254, 80, 1);
+
+$safetynet-orange-opacity-1: rgba(254, 80, 1, 0.1);
+
+$safetynet-orange-opacity-3: rgba(254, 80, 1, 0.3);
+
+$safetynet-orange-opacity-5: rgba(254, 80, 1, 0.5);
+
+$safetynet-orange-opacity-7: rgba(254, 80, 1, 0.7);
+
+$safetynet-orange-hover: rgb(255, 103, 0);
+
+$safetynet-orange-hover-opacity-3: rgba(255, 103, 0, 0.3);
+
+$safetynet-orange-hover-opacity-5: rgba(255, 103, 0, 0.5);
+
+$safetynet-orange-hover-opacity-7: rgba(255, 103, 0, 0.7);
+
+$safetynet-e8: #E8E8E8;
+
+$safetynet-e8-opacity-7: rgba(232, 232, 232, 0.7);
+
+$safetynet-33: #333333;
+
+$safetynet-33-opacity-5: rgba(51, 51, 51, 0.5);
+
+$safetynet-33-opacity-7: rgba(51, 51, 51, 0.7);
+
+$safetynet-66: #666666;
+
+$safetynet-66-opacity-5: rgba(102, 102, 102, 0.5);
+
+$safetynet-66-opacity-7: rgba(102, 102, 102, 0.7);
+
+$plyr-color-main: $safetynet-orange;
+
+$carousel-control-color: $safetynet-orange;
+
+$carousel-caption-color: $safetynet-orange;
+
+$carousel-indicator-active-bg: $safetynet-orange;

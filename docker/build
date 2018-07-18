@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+
+# Bail out on first error
+set -e
+
+# Get the directory of the build script
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Get the current git commit sha
+HASH=$(git rev-parse HEAD)
+
+# Package the app
+cd $DIR/../
+
+# "archive" gives us useful tools - we can use .gitattributes
+# to `export-ignore` extraneous files
+git archive --format=tar --worktree-attributes $HASH | tar -xf - -C $DIR/nginx-phpfpm/packaged
+
+# Production Build Steps
+## (Decision between export-ignore'ing docker/develop command or not)
+
+cd $DIR/nginx-phpfpm/packaged
+
+# Create our .env
+cp .env.production .env
+
+# Install Composer packages
+./development composer install --prefer-dist --no-ansi --no-dev --no-interaction --no-progress --no-suggest
+
+# Install Node modules
+./development npm install
+
+# Build assets
+./development npm run production
+
+# Set our security key
+./development artisan key:generate
+
+# Build the Docker image with latest code
+cd $DIR/nginx-phpfpm
+
+# Login to Docker Hub registry. Free account with 1 repo. Please note that this can be updated to use a paid private account, an AWS S3 account, Gitlab's own container registry etc etc, 
+docker login -u survitecgroup -p Surv1tec
+
+# Build our Production images - note we are building two images.
+## Tagging one image based on the Git commit hash and one called latest.
+## We tag one based on the Git commit hash so we can match against Gitlab's commit history. Also allows us to see what code changes that image had included incase we ever need to role back to a specific commit.
+docker build -t survitecgroup/safetynet:$HASH .
+docker build -t survitecgroup/safetynet:latest .
+
+# Push our Production images
+docker push survitecgroup/safetynet:$HASH
+docker push survitecgroup/safetynet:latest
+
+# Push our Production images from local filesystem again to keep things a bit cleaner.
+docker rmi -f survitecgroup/safetynet:$HASH
+docker rmi -f survitecgroup/safetynet:latest
+
+# Clean up packaged directory
+cd $DIR/nginx-phpfpm/packaged
+
+PWD=$(pwd)
+ 
+if [ "$PWD" == "$DIR/nginx-phpfpm/packaged" ]; then
+	# The "vendor" directory (any built assets!) will be owned as user "root" on the Linux file system so we'll use Docker to delete them with a one-off container
+	docker run --rm -w /opt -v $(pwd):/opt ubuntu:16.04 bash -c "rm -rf ./* && rm -rf ./.git* && rm -rf ./.dockerignore && rm -rf ./.npmignore && rm ./.env*"
+	
+	touch .gitkeep
+fi
+
+# Clean up the "safetynet" workspace directory
+#cd $DIR/../
+
+#PWD=$(pwd)
+
+#if [ "$PWD" == "/var/lib/jenkins/workspace/safetynet" ]; then
+	#docker run --rm -w /opt -v $(pwd):/opt ubuntu:16.04 bash -c "rm -rf ./vendor && rm -rf ./node_modules"
+	#docker run --rm -w /opt -v $(pwd):/opt ubuntu:16.04 bash -c "rm -rf ./* && rm -rf ./.git* && rm -rf ./.dockerignore && rm -rf ./.npmignore && rm ./.env*"
+#fi
